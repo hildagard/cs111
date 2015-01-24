@@ -18,8 +18,14 @@
 #include "command.h"
 #include "command-internals.h"
 
+#include <fcntl.h>
 #include <error.h>
-#include <types.h>
+#include <sys/types.h>
+#include <sys/wait.h> 
+#include <unistd.h>  
+#include <stdlib.h>  
+#include <stdio.h>
+#include <string.h>
 
 /* FIXME: You may need to add #include directives, macro definitions,
    static function definitions, etc.  */
@@ -54,7 +60,7 @@ void prep_io(command_t c)
 	}
 	if (c->output != NULL)
 	{
-		int out = open(c->output, O_WRONLY | O_CREAT | O_TRUNC);
+		int out = open(c->output, O_WRONLY | O_CREAT | O_TRUNC,0664);
 		if (out < 0)
 			error(1, 0, "output: cannot read %s", c->output);
 		//move to 1st (stdout) file descriptor
@@ -142,11 +148,17 @@ void execute_command_only(command_t c)
 	case IF_COMMAND:
 		execute_if_cmd(c);
 		break;
+	case PIPE_COMMAND:
+		execute_pipe_cmd(c);
+		break;
+	case SEQUENCE_COMMAND:
+		execute_sequence_cmd(c);
+		break;
 	}
 }
 void execute_pipe_cmd(command_t c)
 {
-	int status;
+	int exit_code;
 	int file_des_buf[2];
 	pid_t pid1;
 	pid_t pid2;
@@ -163,16 +175,16 @@ void execute_pipe_cmd(command_t c)
 		{
 			close(file_des_buf[0]);
 			close(file_des_buf[1]);
-			pid3 = waitpid(-1, &status, 0);
+			pid3 = waitpid(-1, &exit_code, 0);
 			if (pid3 == pid1)
 			{
-				c->status = WEXITSTATUS(status);
-				waitpid(pid2, &status, 0);
+				c->status = WEXITSTATUS(exit_code);
+				waitpid(pid2, &exit_code, 0);
 			}
-			else if (pid3 == pid2)
+			else
 			{
-				waitpid(pid1, &status, 0);
-				c->status = WEXITSTATUS(status);
+				waitpid(pid1, &exit_code, 0);
+				c->status = WEXITSTATUS(exit_code);
 			}
 			return;
 		}
@@ -203,5 +215,5 @@ command_status (command_t c)
 void
 execute_command (command_t c, int profiling)
 {
- error (1, 0, "command execution not yet implemented");
+execute_command_only(c);
 }
