@@ -161,8 +161,6 @@ void execute_pipe_cmd(command_t c)
 	int exit_code;
 	int file_des_buf[2];
 	pid_t pid1;
-	pid_t pid2;
-	pid_t pid3;
 
 	if (pipe(file_des_buf)<0)
 		error(1, 0, "pipe failed");
@@ -170,11 +168,13 @@ void execute_pipe_cmd(command_t c)
 	pid1 = fork();
 	if (pid1 > 0)
 	{
+		pid_t pid2;
 		pid2 = fork();
 		if (pid2 > 0)
 		{
 			close(file_des_buf[0]);
 			close(file_des_buf[1]);
+			pid_t pid3;
 			pid3 = waitpid(-1, &exit_code, 0);
 			if (pid3 == pid1)
 			{
