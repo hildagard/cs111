@@ -164,7 +164,7 @@ void execute_pipe_cmd(command_t c)
 	pid_t pid2;
 	pid_t pid3;
 
-	if (pipe(file_des_buf) == -1)
+	if (pipe(file_des_buf)<0)
 		error(1, 0, "pipe failed");
 
 	pid1 = fork();
